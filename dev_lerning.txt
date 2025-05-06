@@ -1,43 +1,28 @@
-# Stage 1: Build using Ubuntu base image with Maven and JDK installed
-FROM ubuntu:20.04 AS maven_build
+# Maven build container 
 
-# Install dependencies
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-11-jdk maven && \
-    apt-get clean
+FROM maven:3.8.5-openjdk-11 AS maven_build
 
-# Set environment variable for Java
-ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-ENV PATH=$JAVA_HOME/bin:$PATH
-
-# Copy project files
 COPY pom.xml /tmp/
+
 COPY src /tmp/src/
+
 WORKDIR /tmp/
 
-# Package the application
 RUN mvn package
 
-# Stage 2: Final runtime image
-FROM ubuntu:20.04
+#pull base image
 
-# Maintainer info
-LABEL maintainer="dstar55@yahoo.com"
+FROM eclipse-temurin:11
 
-# Install JDK only for running the jar
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-11-jre && \
-    apt-get clean
-
-# Set environment variable for Java
-ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-ENV PATH=$JAVA_HOME/bin:$PATH
-
-# Expose application port
+#maintainer 
+MAINTAINER dstar55@yahoo.com
+#expose port 8080
 EXPOSE 8080
 
-# Copy built jar from build stage
+
+#copy hello world to docker image from builder image
+
 COPY --from=maven_build /tmp/target/hello-world-0.1.0.jar /data/hello-world-0.1.0.jar
 
-# Run the application
-CMD ["java", "-jar", "/data/hello-world-0.1.0.jar"]
+#default command
+CMD java -jar /data/hello-world-0.1.0.jar
